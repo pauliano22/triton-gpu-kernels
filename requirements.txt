@@ -38,6 +38,6 @@ six==1.17.0
 sympy==1.14.0
 torch==2.11.0
 triton==3.6.0
--e git+https://github.com/pauliano22/triton-gpu-kernels.git@813936e8f221bf93467fd381d9be1222bd51f2e8#egg=triton_kernels
+-e git+https://github.com/pauliano22/triton-gpu-kernels.git@46ece4d30cc46844e9de73ca933ed94cfbb15395#egg=triton_kernels
 typing_extensions==4.15.0
 tzdata==2025.3
