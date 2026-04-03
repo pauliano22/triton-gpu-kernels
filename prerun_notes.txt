@@ -1,0 +1,61 @@
+📄 H100_DEPLOYMENT_NOTES.txt
+SECTION 1: PRE-FLIGHT (DO THIS LOCALLY FIRST)
+[ ] Ensure TRITON_INTERPRET=1 PYTHONPATH=. python3 kernels/vector_add.py passes.
+
+[ ] Ensure all kernels (relu, layer_norm, flash_attn) have no syntax errors.
+
+[ ] Commit and Push all changes to GitHub.
+
+[ ] Have your GitHub Personal Access Token (PAT) ready for the git push on the remote.
+
+SECTION 2: INSTANCE INITIALIZATION (ON AWS/LAMBDA)
+Bash
+# 1. System Check
+nvidia-smi  # Confirm H100 80GB HBM3
+
+# 2. Repo Setup
+git clone https://github.com/pauliano22/triton-gpu-kernels.git
+cd triton-gpu-kernels
+
+# 3. Environment Setup
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+pip install torch triton matplotlib pandas
+pip install -e .
+
+# 4. Hardware Optimization (Requires Sudo)
+sudo nvidia-smi -pm 1        # Enable Persistence Mode
+sudo nvidia-smi -lgc 1755    # Lock Graphics Clock to Max (Hopper)
+SECTION 3: THE HARDWARE RIP
+Bash
+# 5. Clean Environment
+unset TRITON_INTERPRET
+
+# 6. Execute All Benchmarks
+python3 run_all_benchmarks.py
+SECTION 4: DATA EXFILTRATION (DON'T SKIP)
+Bash
+# 7. Check Outputs
+ls -lh *.png *.csv
+
+# 8. Save to Repo
+mkdir -p results_h100
+mv *.png results_h100/
+mv *.csv results_h100/
+git add results_h100/
+git commit -m "H100 Hardware Results: $(date)"
+git push origin main
+SECTION 5: CRITICAL TROUBLESHOOTING
+"Out of Memory (OOM)": If FlashAttention fails, reduce BATCH or SEQ_LEN in benchmarks/bench_flash_attn.py.
+
+"ModuleNotFoundError": Ensure you ran pip install -e . in the root directory.
+
+"Driver too old": AWS P5 instances should have CUDA 12.x. If not, you may need a different AMI (Amazon Machine Image).
+
+"Permission Denied": Use sudo for nvidia-smi commands.
+
+SECTION 6: THE SHUTDOWN
+TERMINATE the instance via the web console.
+
+STOPPING is not enough; AWS still charges for the provisioned EBS storage. DELETE the instance to stop all charges.
