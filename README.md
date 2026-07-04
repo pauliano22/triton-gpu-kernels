@@ -58,3 +58,4 @@ A fundamentally memory-bound operation. This benchmark acts as a baseline to mea
 │   ├── *.csv                    # Raw performance data output
 │   └── *.png                    # Plotted hardware metrics
 └── README.md
+```
