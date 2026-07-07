@@ -11,7 +11,7 @@ This project explores custom fused kernels to bypass PyTorch's eager execution o
 The benchmarks below were executed on a dedicated H100 SXM 80GB environment with locked GPU clocks for hardware consistency.
 
 ### 1. Hardware-Aware Optimization: FP8 Symmetric Quantization
-Memory-bound operations like LayerNorm are restricted by the time it takes to move data between HBM and SRAM. By downcasting from PyTorch's native `bfloat16` to the Hopper-specific FP8 format (`float8e4m3` / `float8e4nv`) and calculating a symmetric scaling factor on the fly, we effectively halved the memory I/O footprint.
+Memory-bound operations like LayerNorm are restricted by the time it takes to move data between HBM and SRAM. By downcasting the output write from PyTorch's native `bfloat16` to the Hopper-specific FP8 format (`float8e4m3` / `float8e4nv`) and calculating a symmetric scaling factor on the fly, we cut the memory I/O footprint by ~25% (the input read and weight/bias reads stay full-width; only the output write shrinks).
 * **Peak PyTorch (BF16):** 2,422.5 GB/s
 * **Peak Triton (FP8):** 3,531.8 GB/s
 * **Result:** ~45.7% Speedup. The Triton FP8 kernel massively accelerated the layer, showcasing the physical bandwidth advantages of 8-bit precision on the H100.
@@ -34,8 +34,8 @@ A custom Triton implementation of FlashAttention. Standard PyTorch `scaled_dot_p
 ![FlashAttention Performance](results/flash-attn-performance.png)
 
 ### 4. Baseline Memory Operations: ReLU
-A fundamentally memory-bound operation. This benchmark acts as a baseline to measure direct memory throughput limits with minimal arithmetic intensity.
-* **Result:** Triton and Torch matched perfectly, proving that our base memory pointer alignment and grid instantiation introduce zero overhead compared to deeply optimized native PyTorch ATen kernels.
+A fundamentally memory-bound operation, used as a correctness/overhead sanity check rather than an H100 benchmark. This one runs locally on CPU (Triton in interpreter mode vs. eager PyTorch) instead of on the H100, since it's meant to isolate pointer/grid overhead rather than measure hardware bandwidth.
+* **Result:** Triton and Torch matched almost exactly, showing that our base memory pointer alignment and grid instantiation introduce zero meaningful overhead compared to native PyTorch ATen kernels.
 
 ![ReLU Performance](results/relu-performance.png)
 
@@ -53,7 +53,8 @@ A fundamentally memory-bound operation. This benchmark acts as a baseline to mea
 │   ├── flash_attn.py            # Block-wise exact attention & online softmax
 │   ├── layer_norm.py            # Fused parallel reduction normalization
 │   ├── layer_norm_fp8.py        # Symmetric FP8 scaling and conversion
-│   └── relu.py                  # Standard activation
+│   ├── relu.py                  # Standard activation
+│   └── vector_add.py            # Elementwise add (Triton 101 warm-up kernel)
 ├── results/
 │   ├── *.csv                    # Raw performance data output
 │   └── *.png                    # Plotted hardware metrics

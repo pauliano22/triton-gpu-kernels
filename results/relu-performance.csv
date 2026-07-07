@@ -1,4 +1,4 @@
-size,Triton (GB/s),Torch (GB/s)
+size,Triton (Interpreted, ms),Torch (CPU, ms)
 4096.000000,0.005297,0.005295
 8192.000000,0.005369,0.005318
 16384.000000,0.005344,0.005359
