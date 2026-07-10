@@ -2,7 +2,7 @@
 
 High-performance custom GPU kernels written in OpenAI's Triton, benchmarked directly against native PyTorch on an NVIDIA H100 SXM (80GB). 
 
-This project explores custom fused kernels to bypass PyTorch's eager execution overhead, utilizing cutting-edge Hopper architecture features like FP8 (`float8e4nv`) and fused FlashAttention to maximize memory bandwidth (GB/s) and compute utilization (TFLOPS).
+This project explores custom fused kernels to bypass PyTorch's eager execution overhead, utilizing cutting-edge Hopper architecture features like FP8 (`float8e4m3fn`) and fused FlashAttention to maximize memory bandwidth (GB/s) and compute utilization (TFLOPS).
 
 ---
 
@@ -11,7 +11,7 @@ This project explores custom fused kernels to bypass PyTorch's eager execution o
 The benchmarks below were executed on a dedicated H100 SXM 80GB environment with locked GPU clocks for hardware consistency.
 
 ### 1. Hardware-Aware Optimization: FP8 Symmetric Quantization
-Memory-bound operations like LayerNorm are restricted by the time it takes to move data between HBM and SRAM. By downcasting the output write from PyTorch's native `bfloat16` to the Hopper-specific FP8 format (`float8e4m3` / `float8e4nv`) and calculating a symmetric scaling factor on the fly, we cut the memory I/O footprint by ~25% (the input read and weight/bias reads stay full-width; only the output write shrinks).
+Memory-bound operations like LayerNorm are restricted by the time it takes to move data between HBM and SRAM. By downcasting the output write from PyTorch's native `bfloat16` to the Hopper-specific FP8 format (`float8e4m3fn`) and calculating a symmetric scaling factor on the fly, we cut the memory I/O footprint by ~17% (the input read and weight/bias reads stay full-width; only the output write shrinks from 2 bytes/elem to 1).
 * **Peak PyTorch (BF16):** 2,422.5 GB/s
 * **Peak Triton (FP8):** 3,531.8 GB/s
 * **Result:** ~45.7% Speedup. The Triton FP8 kernel massively accelerated the layer, showcasing the physical bandwidth advantages of 8-bit precision on the H100.
