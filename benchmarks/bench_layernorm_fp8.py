@@ -30,7 +30,7 @@ def benchmark(M, N, provider):
     
     # Calculate Bandwidth: (Reads + Writes) / time
     # BF16: M*N*2 (read X) + M*N*2 (read W/B) + M*N*2 (write Y) 
-    # FP8:  M*N*2 (read X) + M*N*2 (read W/B) + M*N*1 (write Y) -> 25% less traffic!
+    # FP8:  M*N*2 (read X) + M*N*2 (read W/B) + M*N*1 (write Y) -> ~17% less traffic!
     gbps = lambda ms: (M * N * 6) / ms / 1e6
     return gbps(ms), gbps(max_ms), gbps(min_ms)
 

@@ -27,7 +27,7 @@ Standard half-precision LayerNorm benchmark. Native PyTorch executes LayerNorm b
 ![LayerNorm FP16 Performance](results/layernorm-performance.png)
 
 ### 3. FlashAttention: Memory-Efficient Exact Attention
-A custom Triton implementation of FlashAttention. Standard PyTorch `scaled_dot_product_attention` (without a backend specified) scales quadratically with sequence length, causing massive memory bottlenecks when materializing the N x N attention matrix. 
+A custom Triton implementation of FlashAttention. A naive PyTorch attention implementation (manual Q·K^T, softmax, then ·V) scales quadratically with sequence length, causing massive memory bottlenecks when materializing the N x N attention matrix. 
 * **Peak PyTorch Baseline (Seq Len 8192):** ~464 TFLOPS
 * **Result:** The fused Triton kernel avoids materializing the attention matrix entirely by relying on online softmax calculations inside the SRAM. As sequence lengths scaled exponentially (512 to 16,384), the Triton kernel bypassed Torch's standard quadratic time and memory limitations entirely, handling ultra-long contexts with negligible overhead.
 
