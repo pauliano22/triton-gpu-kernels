@@ -22,7 +22,7 @@ Memory-bound operations like LayerNorm are restricted by the time it takes to mo
 Standard half-precision LayerNorm benchmark. Native PyTorch executes LayerNorm by calculating the mean, variance, and normalization across multiple separate kernel launches, resulting in redundant trips to HBM. Our custom Triton kernel fuses these operations into a single block-level operation in SRAM.
 * **Peak PyTorch:** 2,696.5 GB/s
 * **Peak Triton:** 3,906.1 GB/s
-* **Result:** ~44.8% Speedup. Triton's fused approach consistently outperforms PyTorch, getting much closer to the H100's theoretical ~3,350 GB/s peak memory bandwidth limits.
+* **Result:** ~44.8% Speedup. These are *effective* bandwidth figures: the numerator counts the bytes the unfused op sequence would move — including per-row weight/bias traffic that is physically served from L2/SRAM — which is why the fused kernel can report more than the H100's ~3.35 TB/s physical HBM peak. Exceeding physical peak is evidence that HBM traffic was eliminated, not that HBM ran faster; physical DRAM traffic (Nsight `dram__bytes`) stays below peak.
 
 ![LayerNorm FP16 Performance](results/layernorm-performance.png)
 
