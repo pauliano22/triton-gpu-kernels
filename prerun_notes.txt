@@ -1,4 +1,4 @@
-📄 H100_DEPLOYMENT_NOTES.txt
+📄 prerun_notes.txt
 SECTION 1: PRE-FLIGHT (DO THIS LOCALLY FIRST)
 [ ] Ensure TRITON_INTERPRET=1 PYTHONPATH=. python3 kernels/vector_add.py passes.
 
