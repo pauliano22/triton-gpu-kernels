@@ -32,12 +32,11 @@ def layernorm_quant_kernel(
     max_val = tl.max(tl.abs(y_fp32), axis=0)
     scale = max_val / 448.0  # 448 is the max value for FP8-E4M3
     
-    y_fp8 = (y_fp32 / scale).to(tl.float8e4m3fn)
+    y_fp8 = (y_fp32 / scale).to(tl.float8e4nv)
 
-    # 3. Store the FP8 data and the scale factor
+    # 3. Store the FP8 data and this row's scale factor
     tl.store(Y_ptr + cols, y_fp8, mask=mask)
-    if tl.program_id(0) == 0: # Store the scale once for the whole tensor or per row
-        tl.store(Scale_ptr + row_idx, scale)
+    tl.store(Scale_ptr + row_idx, scale)
 
 def layernorm_fp8(x, w, b):
     M, N = x.shape

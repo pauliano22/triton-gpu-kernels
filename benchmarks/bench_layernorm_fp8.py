@@ -12,7 +12,7 @@ from kernels.layer_norm_fp8 import layernorm_fp8
         line_names=['PyTorch BF16', 'Triton Fused FP8'], 
         styles=[('green', '-'), ('blue', '-')], 
         ylabel='GB/s', 
-        plot_name='layernorm-fp8-vs-bf16',
+        plot_name='layernorm-fp8',
         args={'M': 2048}, 
     )
 )
@@ -29,9 +29,10 @@ def benchmark(M, N, provider):
         ms, min_ms, max_ms = triton.testing.do_bench(lambda: layernorm_fp8(x, w, b), quantiles=quantiles)
     
     # Calculate Bandwidth: (Reads + Writes) / time
-    # BF16: M*N*2 (read X) + M*N*2 (read W/B) + M*N*2 (write Y) 
+    # BF16: M*N*2 (read X) + M*N*2 (read W/B) + M*N*2 (write Y)
     # FP8:  M*N*2 (read X) + M*N*2 (read W/B) + M*N*1 (write Y) -> ~17% less traffic!
-    gbps = lambda ms: (M * N * 6) / ms / 1e6
+    bytes_per_elem = 6 if provider == 'torch_bf16' else 5
+    gbps = lambda ms: (M * N * bytes_per_elem) / ms / 1e6
     return gbps(ms), gbps(max_ms), gbps(min_ms)
 
 if __name__ == "__main__":

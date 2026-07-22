@@ -27,7 +27,7 @@ def simple_bench(fn, iterations=10):
         line_names=['Triton (Interpreted)', 'PyTorch (CPU)'], 
         styles=[('blue', '-'), ('green', '-')], 
         ylabel='Execution Time (ms)', # Switched to ms because GB/s is misleading on CPU
-        plot_name='relu-performance-local',
+        plot_name='relu-performance',
         args={}, 
     )
 )
