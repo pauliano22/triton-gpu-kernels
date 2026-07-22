@@ -6,7 +6,7 @@ import triton.language as tl
 def flash_attn_kernel(
     Q, K, V, L, Out,
     stride_qm, stride_kn, stride_vn, stride_om,
-    n_heads, d_head,
+    seq_len, d_head: tl.constexpr,
     BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr,
 ):
     # Each program handles one 'head' of the attention
@@ -29,7 +29,7 @@ def flash_attn_kernel(
     q = tl.load(Q_ptr + rm[:, None] * d_head + rk[None, :])
 
     # Loop over Key/Value blocks (Streaming)
-    for start_n in range(0, n_heads, BLOCK_N):
+    for start_n in range(0, seq_len, BLOCK_N):
         rn = start_n + tl.arange(0, BLOCK_N)
         k = tl.load(K_ptr + rn[None, :] * d_head + rk[:, None])
         v = tl.load(V_ptr + rn[:, None] * d_head + rk[None, :])
@@ -56,3 +56,31 @@ def flash_attn_kernel(
     # Final normalization
     acc = acc / l_i[:, None]
     tl.store(Out_ptr + rm[:, None] * d_head + rk[None, :], acc.to(tl.float16))
+
+
+def flash_attn(q, k, v):
+    """Block-wise attention over (BATCH, N_HEADS, SEQ_LEN, D_HEAD) tensors.
+
+    "Lite" limitation: the kernel loads the full query block for a given
+    (batch, head) in one shot with no bounds masking, so SEQ_LEN must be a
+    power of two (BLOCK_M == SEQ_LEN exactly).
+    """
+    assert q.shape == k.shape == v.shape
+    BATCH, N_HEADS, SEQ_LEN, D_HEAD = q.shape
+    assert SEQ_LEN & (SEQ_LEN - 1) == 0, "flash_attn (lite) requires a power-of-2 SEQ_LEN"
+
+    out = torch.empty_like(q)
+    l = torch.empty((BATCH * N_HEADS, SEQ_LEN), device=q.device, dtype=torch.float32)
+
+    BLOCK_M = SEQ_LEN
+    BLOCK_N = min(128, SEQ_LEN)
+    stride = SEQ_LEN * D_HEAD  # elements between consecutive (batch, head) blocks
+    grid = (BATCH * N_HEADS,)
+
+    flash_attn_kernel[grid](
+        q, k, v, l, out,
+        stride, stride, stride, stride,
+        SEQ_LEN, D_HEAD,
+        BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N,
+    )
+    return out
