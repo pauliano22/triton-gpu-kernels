@@ -12,7 +12,7 @@ from kernels.flash_attn import flash_attn
         line_names=['FlashAttention-Lite (Triton)', 'Naive Attention (PyTorch)'],
         styles=[('blue', '-'), ('red', '-')],
         ylabel='TFLOPS',
-        plot_name='flash-attention-performance',
+        plot_name='flash-attn-performance',
         args={'BATCH': 4, 'N_HEADS': 16, 'D_HEAD': 64},
     )
 )
