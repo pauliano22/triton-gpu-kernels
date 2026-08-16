@@ -12,7 +12,7 @@ from kernels.layer_norm_fp8 import layernorm_fp8
         line_names=['PyTorch BF16', 'Triton Fused FP8'], 
         styles=[('green', '-'), ('blue', '-')], 
         ylabel='GB/s', 
-        plot_name='layernorm-fp8-vs-bf16',
+        plot_name='layernorm-fp8',
         args={'M': 2048}, 
     )
 )
