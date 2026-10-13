@@ -5,7 +5,7 @@ cuda-toolkit==13.0.2
 cycler==0.12.1
 filelock==3.25.2
 fonttools==4.62.1
-fsspec==2026.3.0
+fsspec==2026.6.0
 Jinja2==3.1.6
 kiwisolver==1.5.0
 MarkupSafe==3.0.3
@@ -30,7 +30,7 @@ nvidia-nvshmem-cu13==3.4.5
 nvidia-nvtx==13.0.85
 packaging==26.0
 pandas==2.3.3
-pillow==12.2.0
+pillow==12.3.0
 pyparsing==3.3.2
 python-dateutil==2.9.0.post0
 pytz==2026.1.post1
