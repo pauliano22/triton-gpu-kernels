@@ -27,11 +27,10 @@ Standard half-precision LayerNorm benchmark. Native PyTorch executes LayerNorm b
 ![LayerNorm FP16 Performance](results/layernorm-performance.png)
 
 ### 3. FlashAttention: Memory-Efficient Exact Attention
-A custom Triton implementation of FlashAttention. A naive PyTorch attention implementation (manual Q·K^T, softmax, then ·V) scales quadratically with sequence length, causing massive memory bottlenecks when materializing the N x N attention matrix. 
+A custom Triton implementation of FlashAttention. A naive PyTorch attention implementation (manual Q·K^T, softmax, then ·V) scales quadratically with sequence length, causing massive memory bottlenecks when materializing the N x N attention matrix.
 * **Peak PyTorch Baseline (Seq Len 8192):** ~464 TFLOPS
-* **Result:** The fused Triton kernel avoids materializing the attention matrix entirely by relying on online softmax calculations inside the SRAM. As sequence lengths scaled exponentially (512 to 16,384), the Triton kernel bypassed Torch's standard quadratic time and memory limitations entirely, handling ultra-long contexts with negligible overhead.
-
-![FlashAttention Performance](results/flash-attn-performance.png)
+* **Approach:** The fused Triton kernel avoids materializing the attention matrix entirely, relying on block-wise streaming and online softmax calculations inside SRAM instead.
+* **Status:** `kernels/flash_attn.py` was missing its `flash_attn()` entry point, so `benchmarks/bench_flash_attn.py` couldn't import it — the Triton side of this benchmark had never actually run (see #15). The previously-committed `results/flash-attn-performance.{csv,png}` reported Triton throughput up to ~1,058,160 TFLOPS at seq_len=16384 — orders of magnitude beyond any GPU's physical peak, consistent with having been generated before a working kernel existed. Removed them; real H100 numbers need to be captured via `python3 benchmarks/bench_flash_attn.py` once #15 lands.
 
 ### 4. Baseline Memory Operations: ReLU
 A fundamentally memory-bound operation, used as a correctness/overhead sanity check rather than an H100 benchmark. This one runs locally on CPU (Triton in interpreter mode vs. eager PyTorch) instead of on the H100, since it's meant to isolate pointer/grid overhead rather than measure hardware bandwidth.
