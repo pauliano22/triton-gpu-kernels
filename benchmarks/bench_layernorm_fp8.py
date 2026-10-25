@@ -23,15 +23,17 @@ def benchmark(M, N, provider):
     b = torch.zeros(N, device=device, dtype=torch.bfloat16)
     
     quantiles = [0.5, 0.2, 0.8]
+    # Calculate Bandwidth: (Reads + Writes) / time
+    # BF16: M*N*2 (read X) + M*N*2 (read W/B) + M*N*2 (write Y) -> 6 units
+    # FP8:  M*N*2 (read X) + M*N*2 (read W/B) + M*N*1 (write Y) -> 5 units (~17% less traffic!)
     if provider == 'torch_bf16':
         ms, min_ms, max_ms = triton.testing.do_bench(lambda: torch.nn.functional.layer_norm(x, (N,), w, b), quantiles=quantiles)
+        units = 6
     if provider == 'triton_fp8':
         ms, min_ms, max_ms = triton.testing.do_bench(lambda: layernorm_fp8(x, w, b), quantiles=quantiles)
-    
-    # Calculate Bandwidth: (Reads + Writes) / time
-    # BF16: M*N*2 (read X) + M*N*2 (read W/B) + M*N*2 (write Y) 
-    # FP8:  M*N*2 (read X) + M*N*2 (read W/B) + M*N*1 (write Y) -> ~17% less traffic!
-    gbps = lambda ms: (M * N * 6) / ms / 1e6
+        units = 5
+
+    gbps = lambda ms: (M * N * units) / ms / 1e6
     return gbps(ms), gbps(max_ms), gbps(min_ms)
 
 if __name__ == "__main__":
